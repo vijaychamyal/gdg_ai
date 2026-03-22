@@ -193,28 +193,32 @@ def load_ppt(file_path):
     for slide_num, slide in enumerate(prs.slides):
         slide_text = []
 
-        # normal text from text boxes
         for shape in slide.shapes:
             if not shape.has_text_frame:
                 continue
             for para in shape.text_frame.paragraphs:
+                # join runs and strip
                 line = " ".join(run.text for run in para.runs).strip()
+                # clean multiple spaces inside line
+                line = " ".join(line.split())
                 if line:
                     slide_text.append(line)
 
-        # text from images on slide
+        # get image text from slide
         image_text = extract_images_text_from_slide(slide)
-        
-        # combine both
-        full_text  = " ".join(slide_text) + " " + image_text
 
-        if is_garbage_text(full_text) and not image_text:
+        # combine text and image text
+        full_text  = " ".join(slide_text) + " " + image_text
+        full_text  = " ".join(full_text.split())  # clean all extra spaces
+
+        # skip only if truly empty after combining both
+        if len(full_text.strip()) < 3:
             skipped += 1
             continue
 
         cleaned = clean_text(full_text)
 
-        if len(cleaned) < 50:
+        if len(cleaned.strip()) < 3:
             skipped += 1
             continue
 
@@ -226,7 +230,6 @@ def load_ppt(file_path):
 
     print(f"  Loaded {len(pages)} slides | Skipped {skipped}")
     return pages
-
 
 # load xlsx file row by row using openpyxl
 
